@@ -1,3 +1,34 @@
+
+# Prerequisites
+* Truffle v5.3.7 (core: 5.3.7)
+* Solidity - ^0.4.25 (solc-js)
+* Node v12.16.1
+* Web3.js v1.3.6
+
+# Project setup
+
+* `nvm install v12.16.1`
+* `nvm use v12.16.1`
+* `npm install`
+* create a workspace in ganache-ui with 30 accounts (and 1000 ETH balance) in port 7545
+* Make sure to use the right truffle version. You can run `npx truffle version` from the project root dir
+
+# Compile the contracts
+truffle migrate --reset
+npm run dapp
+npm run server
+
+# Running tests
+truffle test ./test/flightSurety.js
+
+
+
+
+
+
+
+------------------------------------------------
+
 # FlightSurety
 
 FlightSurety is a sample application project for Udacity's Blockchain course.

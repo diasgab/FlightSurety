@@ -5,6 +5,7 @@ pragma solidity ^0.4.25;
 // More info: https://www.nccgroup.trust/us/about-us/newsroom-and-events/blog/2018/november/smart-contract-insecurity-bad-arithmetic/
 
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./FlightSuretyData.sol";
 
 /************************************************** */
 /* FlightSurety Smart Contract                      */
@@ -19,12 +20,17 @@ contract FlightSuretyApp {
     // Flight status codees
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
-    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20;
+    uint8 private constant STATUS_CODE_LATE_AIRLINE = 20; //when the oracle reports this code, we will credit the passenger
     uint8 private constant STATUS_CODE_LATE_WEATHER = 30;
     uint8 private constant STATUS_CODE_LATE_TECHNICAL = 40;
     uint8 private constant STATUS_CODE_LATE_OTHER = 50;
 
     address private contractOwner;          // Account used to deploy contract
+    FlightSuretyData flightSuretyData;
+
+    // after this threshold is reached the airlines would need multi-party consensus to add new airlines
+    uint8 private constant THRESHOLD_AIRLINES = 4;
+    uint256 public constant AIRLINE_SEED_FUNDING = 10 ether;
 
     struct Flight {
         bool isRegistered;
@@ -34,7 +40,14 @@ contract FlightSuretyApp {
     }
     mapping(bytes32 => Flight) private flights;
 
- 
+    /********************************************************************************************/
+    /*                                       EVENT DEFINITIONS                                  */
+    /********************************************************************************************/
+
+    event RegisteredAirline(address account, uint256 totalAirlines);
+    event AirlineVoted(address account, uint256 votes);
+    event AirlineFunded(address account, uint256 funds);
+
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
     /********************************************************************************************/
@@ -63,6 +76,22 @@ contract FlightSuretyApp {
         _;
     }
 
+    /**
+     * @dev Modifier that requires the caller to be a registered airline
+     */
+    modifier requireRegisteredAirline() {
+        require(flightSuretyData.isAirlineRegistered(msg.sender), "Caller is not a registered airline");
+        _;
+    }
+
+    /**
+     * @dev Modifier that requires the caller to be a funded airline
+     */
+    modifier requireFundedAirline() {
+        require(flightSuretyData.isAirlineFunded(msg.sender), "Caller is not a funded airline");
+        _;
+    }
+
     /********************************************************************************************/
     /*                                       CONSTRUCTOR                                        */
     /********************************************************************************************/
@@ -73,10 +102,14 @@ contract FlightSuretyApp {
     */
     constructor
                                 (
+                                    address _dataContract,
+                                    address _airline
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
+        flightSuretyData = FlightSuretyData(_dataContract);
+        flightSuretyData.registerFirstAirline(_airline);
     }
 
     /********************************************************************************************/
@@ -95,19 +128,69 @@ contract FlightSuretyApp {
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
 
-  
+    /**
+    * This method will be used by airlines to add funds to the insurance pool
+    *
+    */
+    function fundAirline()
+    public
+    payable
+    requireIsOperational
+    requireRegisteredAirline
+    {
+        require(msg.value >= AIRLINE_SEED_FUNDING, "Minimum amount to fund an airline is 10 ether");
+        flightSuretyData.fundAirline(msg.sender, msg.value);
+
+        flightSuretyData.transfer(msg.value);
+
+        emit AirlineFunded(msg.sender, msg.value);
+    }
+
    /**
     * @dev Add an airline to the registration queue
     *
-    */   
+    */
     function registerAirline
-                            (   
-                            )
-                            external
-                            pure
-                            returns(bool success, uint256 votes)
+    (
+        address _airlineAddress
+    )
+    external
+    requireIsOperational
+    requireFundedAirline
+    returns(bool success, uint256 votes)
     {
-        return (success, 0);
+        require(!flightSuretyData.isAirlineRegistered(_airlineAddress), "Airline is registered already");
+
+        bool registered = false;
+        uint256 numberOfVotes = 0;
+
+        uint256 airlinesCount = flightSuretyData.getAirlinesCount();
+        if (airlinesCount < THRESHOLD_AIRLINES ) {
+            flightSuretyData.registerAirline(_airlineAddress);
+            registered = true;
+            emit RegisteredAirline(_airlineAddress, flightSuretyData.getAirlinesCount());
+
+        } else {
+            require(flightSuretyData.voted(_airlineAddress, msg.sender) == false, "Caller has already voted");
+
+            flightSuretyData.registerVote(_airlineAddress, msg.sender);
+
+            uint256 requiredVotes = airlinesCount.div(2);
+            if (airlinesCount % 2 != 0) {
+                requiredVotes = requiredVotes.add(1);
+            }
+
+            numberOfVotes = flightSuretyData.airlineVotesCount(_airlineAddress);
+            if (numberOfVotes == requiredVotes) {
+                flightSuretyData.registerAirline(_airlineAddress);
+                registered = true;
+                emit RegisteredAirline(_airlineAddress, flightSuretyData.getAirlinesCount());
+            } else {
+                emit AirlineVoted(_airlineAddress, numberOfVotes);
+            }
+        }
+
+        return (registered, numberOfVotes);
     }
 
 
@@ -138,6 +221,8 @@ contract FlightSuretyApp {
                                 internal
                                 pure
     {
+        // TODO: probably only react to status code == 20 ,determine if someone has to be paid and how much
+        // NOTE: this method will be triggered by the dapp when requesting the flight status (it's manual)
     }
 
 
