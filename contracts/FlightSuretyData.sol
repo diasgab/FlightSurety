@@ -22,6 +22,26 @@ contract FlightSuretyData {
     uint256 private countAirlines = 0;
     mapping(address => address[]) private airlineVotes;
 
+    struct Flight {
+        string flightCode;
+        bool isRegistered;
+        uint8 statusCode;
+        uint256 departureTime;
+        address airline;
+    }
+
+    mapping(bytes32 => Flight) private flights;
+    bytes32[] private flightKeys; // Keys of registered flights
+
+    struct FlightInsurance {
+        mapping(address => uint256) purchasedAmount; // per passenger
+        mapping(address => uint256) refundedAmount;  //per passenger
+        address[] passengers;                        // All insured passengers in a flight
+        bool isFullyRefunded;
+    }
+
+    mapping(bytes32 => FlightInsurance) private insurances; // Insurance per flight
+
     // the funds will increase by airline contributions and decrease when paying to insurees
     uint256 private totalFunds = 0 ether;
 
@@ -178,6 +198,11 @@ contract FlightSuretyData {
         return totalFunds;
     }
 
+    function isFlightRegistered(address _airline, string _flightCode, uint256 _timestamp) public view returns (bool) {
+        bytes32 key = getFlightKey(_airline, _flightCode, _timestamp);
+        return flights[key].isRegistered;
+    }
+
     /********************************************************************************************/
     /*                                     SMART CONTRACT FUNCTIONS                             */
     /********************************************************************************************/
@@ -234,18 +259,57 @@ contract FlightSuretyData {
         countAirlines = countAirlines.add(1);
     }
 
-
-   /**
-    * @dev Buy insurance for a flight
-    *
-    */   
-    function buy
-                            (                             
-                            )
-                            external
-                            payable
+    /**
+    * Registers a new flight
+    */
+    function registerFlight(address _airline, string memory _flight, uint256 _departureTime, uint8 _status)
+    public
+    requireIsOperational
+    requireAuthorizedCaller
+    returns (bytes32)
     {
+        bytes32 flightKey = getFlightKey(_airline, _flight, _departureTime);
+        flights[flightKey] = Flight({
+            flightCode: _flight,
+            isRegistered: true,
+            statusCode: _status,
+            departureTime: _departureTime,
+            airline: _airline
+        });
 
+        flightKeys.push(flightKey);
+
+        return flightKey;
+    }
+
+    function buyInsurance(address _airline, string memory _flight, uint256 _departureTime, address _passenger, uint256 _amount)
+    public
+    requireIsOperational
+    requireAuthorizedCaller
+    {
+        bytes32 flightKey = getFlightKey(_airline, _flight, _departureTime);
+        require(bytes(flights[flightKey].flightCode).length > 0, "Flight does not exist");
+        insurances[flightKey].purchasedAmount[_passenger] = _amount;
+        insurances[flightKey].passengers.push(_passenger);
+        insurances[flightKey].isFullyRefunded = false;
+    }
+
+    function getFlight(bytes32 _flightKey)
+    public
+    view
+    requireIsOperational
+    requireAuthorizedCaller
+    returns (
+        address airline,
+        string memory flight,
+        uint256 departureTime,
+        uint8 statusCode
+    )
+    {
+        airline = flights[_flightKey].airline;
+        flight = flights[_flightKey].flightCode;
+        departureTime = flights[_flightKey].departureTime;
+        statusCode = flights[_flightKey].statusCode;
     }
 
     /**

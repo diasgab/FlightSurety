@@ -17,7 +17,7 @@ contract FlightSuretyApp {
     /*                                       DATA VARIABLES                                     */
     /********************************************************************************************/
 
-    // Flight status codees
+    // Flight status codes
     uint8 private constant STATUS_CODE_UNKNOWN = 0;
     uint8 private constant STATUS_CODE_ON_TIME = 10;
     uint8 private constant STATUS_CODE_LATE_AIRLINE = 20; //when the oracle reports this code, we will credit the passenger
@@ -31,6 +31,7 @@ contract FlightSuretyApp {
     // after this threshold is reached the airlines would need multi-party consensus to add new airlines
     uint8 private constant THRESHOLD_AIRLINES = 4;
     uint256 public constant AIRLINE_SEED_FUNDING = 10 ether;
+    uint256 private constant MAX_INSURANCE_CAP = 1 ether; // max amount per user when buying an insurance
 
     struct Flight {
         bool isRegistered;
@@ -44,9 +45,11 @@ contract FlightSuretyApp {
     /*                                       EVENT DEFINITIONS                                  */
     /********************************************************************************************/
 
-    event RegisteredAirline(address account, uint256 totalAirlines);
-    event AirlineVoted(address account, uint256 votes);
-    event AirlineFunded(address account, uint256 funds);
+    event RegisteredAirline(address airlineAddress, uint256 totalAirlines);
+    event AirlineVoted(address airlineAddress, uint256 votes);
+    event AirlineFunded(address airlineAddress, uint256 funds);
+    event FlightRegistered(string flightNumber, address airlineAddress, uint256 departureTime, bytes32 flightKey);
+    event FlightInsurancePurchased(address passengerAddress, uint256 amount);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -141,7 +144,7 @@ contract FlightSuretyApp {
         require(msg.value >= AIRLINE_SEED_FUNDING, "Minimum amount to fund an airline is 10 ether");
         flightSuretyData.fundAirline(msg.sender, msg.value);
 
-        flightSuretyData.transfer(msg.value);
+        address(flightSuretyData).transfer(msg.value);
 
         emit AirlineFunded(msg.sender, msg.value);
     }
@@ -197,14 +200,54 @@ contract FlightSuretyApp {
    /**
     * @dev Register a future flight for insuring.
     *
-    */  
-    function registerFlight
-                                (
-                                )
-                                external
-                                pure
+    */
+    function registerFlight (string _flightNumber, uint256 _departureTime)
+    public
+    requireIsOperational
+    requireFundedAirline
     {
+        // Make sure flight is not registered
+        require(!flightSuretyData.isFlightRegistered(msg.sender, _flightNumber, _departureTime), "Flight is already registered");
+        bytes32 flightKey = flightSuretyData.registerFlight(msg.sender, _flightNumber, _departureTime, STATUS_CODE_UNKNOWN);
 
+        emit FlightRegistered(_flightNumber, msg.sender, _departureTime, flightKey);
+    }
+
+    /**
+    * Buy an insurance
+    *
+    */
+    function buyInsurance(address _airlineAddress, string _flightNumber, uint256 _departureTime)
+    public
+    payable
+    requireIsOperational
+    {
+        require(msg.value <= MAX_INSURANCE_CAP, "Passenger can buy insurance for a maximum of 1 ether");
+        flightSuretyData.buyInsurance(
+            _airlineAddress,
+            _flightNumber,
+            _departureTime,
+            msg.sender,
+            msg.value
+        );
+
+        address(flightSuretyData).transfer(msg.value);
+
+        emit FlightInsurancePurchased(msg.sender, msg.value);
+    }
+
+    function getFlight(bytes32 _flightKey)
+    public
+    view
+    requireIsOperational
+    returns (
+        address airline,
+        string memory flight,
+        uint256 departureTime,
+        uint8 statusCode
+    )
+    {
+        return flightSuretyData.getFlight(_flightKey);
     }
     
    /**
@@ -397,7 +440,7 @@ contract FlightSuretyApp {
         return indexes;
     }
 
-    // Returns array of three non-duplicating integers from 0-9
+    // Returns a random integer from 0-9
     function getRandomIndex
                             (
                                 address account
