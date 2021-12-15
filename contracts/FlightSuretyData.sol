@@ -134,7 +134,7 @@ contract FlightSuretyData {
     * This method would be needed to allow access only from the FlightSuretyApp contract
     * @param _callerAddress the address to be added as authorized
     */
-    function authorizeCaller(address _callerAddress) requireContractOwner public returns (bool) {
+    function authorizeCaller(address _callerAddress) requireContractOwner external returns (bool) {
         authorizedCallers[_callerAddress] = true;
 
         return true;
@@ -144,14 +144,14 @@ contract FlightSuretyData {
     * Check if an airline is registered
     * @param _airlineAddress the airline address to check
     */
-    function isAirlineRegistered(address _airlineAddress) public view returns(bool) {
+    function isAirlineRegistered(address _airlineAddress) external view returns(bool) {
         return airlines[_airlineAddress].isRegistered;
     }
 
     /**
     * Returns the amount of registered airlines
     */
-    function getAirlinesCount() public view returns(uint256) {
+    function getAirlinesCount() external view returns(uint256) {
         return countAirlines;
     }
 
@@ -176,7 +176,7 @@ contract FlightSuretyData {
     * @param _voterAddress the voter
     */
     function registerVote(address _airlineAddress, address _voterAddress)
-    public
+    external
     requireIsOperational
     requireAuthorizedCaller {
         airlineVotes[_airlineAddress].push(_voterAddress);
@@ -186,19 +186,19 @@ contract FlightSuretyData {
     * Fetch the amount of votes an airline has received
     * @param _airlineAddress the address to get the votes amount
     */
-    function airlineVotesCount(address _airlineAddress) public view returns (uint256) {
+    function airlineVotesCount(address _airlineAddress) external view returns (uint256) {
         return airlineVotes[_airlineAddress].length;
     }
 
-    function isAirlineFunded(address _airlineAddress) public view returns (bool) {
+    function isAirlineFunded(address _airlineAddress) external view returns (bool) {
         return airlines[_airlineAddress].isFunded;
     }
 
-    function getTotalFunds() public view returns (uint256) {
+    function getTotalFunds() external view returns (uint256) {
         return totalFunds;
     }
 
-    function isFlightRegistered(address _airline, string _flightCode, uint256 _timestamp) public view returns (bool) {
+    function isFlightRegistered(address _airline, string _flightCode, uint256 _timestamp) external view returns (bool) {
         bytes32 key = getFlightKey(_airline, _flightCode, _timestamp);
         return flights[key].isRegistered;
     }
@@ -210,7 +210,7 @@ contract FlightSuretyData {
     /**
     *
     */
-    function registerFirstAirline(address _airlineAddress) public requireIsOperational {
+    function registerFirstAirline(address _airlineAddress) external requireIsOperational {
         require(countAirlines == 0, "Not the first airline");
         airlines[_airlineAddress] = Airline({
             isRegistered: true,
@@ -230,7 +230,7 @@ contract FlightSuretyData {
         address _airlineAddress,
         uint256 _fundAmount
     )
-    public
+    external
     requireIsOperational
     requireAuthorizedCaller
     {
@@ -247,7 +247,7 @@ contract FlightSuretyData {
     (
         address _airlineAddress
     )
-    public
+    external
     requireIsOperational
     requireAuthorizedCaller
     {
@@ -262,8 +262,8 @@ contract FlightSuretyData {
     /**
     * Registers a new flight
     */
-    function registerFlight(address _airline, string memory _flight, uint256 _departureTime, uint8 _status)
-    public
+    function registerFlight(address _airline, string _flight, uint256 _departureTime, uint8 _status)
+    external
     requireIsOperational
     requireAuthorizedCaller
     returns (bytes32)
@@ -282,8 +282,8 @@ contract FlightSuretyData {
         return flightKey;
     }
 
-    function buyInsurance(address _airline, string memory _flight, uint256 _departureTime, address _passenger, uint256 _amount)
-    public
+    function buyInsurance(address _airline, string _flight, uint256 _departureTime, address _passenger, uint256 _amount)
+    external
     requireIsOperational
     requireAuthorizedCaller
     {
@@ -295,7 +295,7 @@ contract FlightSuretyData {
     }
 
     function getFlightKeys()
-    public
+    external
     view
     requireIsOperational
     requireAuthorizedCaller
@@ -305,7 +305,7 @@ contract FlightSuretyData {
     }
 
     function getFlight(bytes32 _flightKey)
-    public
+    external
     view
     requireIsOperational
     requireAuthorizedCaller

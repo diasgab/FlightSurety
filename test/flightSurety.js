@@ -207,6 +207,110 @@ contract('Flight Surety Tests', async (accounts) => {
 
       assert.equal(result, 5, `There should be 5 airlines available! The consensus failed`);
     });
+  });
 
+  describe("registerFlight()", () => {
+
+    it('should allow a funded airline to register a flight', async () => {
+
+      await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
+
+      let defaultDate = new Date();
+      // current day plus 8 days
+      defaultDate.setDate((defaultDate.getDate() + 8));
+
+      let flightNumber = 'GD001';
+      let departureTime = defaultDate.valueOf();
+
+      // ACT
+      try {
+        await config.flightSuretyApp.registerFlight(flightNumber, departureTime, {from: config.firstAirline});
+      } catch (e) {
+
+      }
+      let result = await config.flightSuretyData.isFlightRegistered.call(config.firstAirline, flightNumber, departureTime);
+
+      // ASSERT
+      assert.equal(result, true, "Flight should be registered");
+    });
+
+    it('should prevent a registered airline (not funded) to register a flight', async () => {
+      let defaultDate = new Date();
+      // current day plus 8 days
+      defaultDate.setDate((defaultDate.getDate() + 8));
+
+      let flightNumber = 'GD001';
+      let departureTime = defaultDate.valueOf();
+
+      // ACT
+      try {
+        await config.flightSuretyApp.registerFlight(flightNumber, departureTime, {from: config.firstAirline});
+      } catch (e) {
+
+      }
+      let result = await config.flightSuretyData.isFlightRegistered.call(config.firstAirline, flightNumber, departureTime);
+
+      // ASSERT
+      assert.equal(result, false, "Flight should NOT be registered");
+    });
+  });
+
+  describe("buyInsurance()", () => {
+
+    it('should allow a passenger to buy a flight insurance', async () => {
+
+      // fund airline
+      await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
+
+      // register flight
+      let defaultDate = new Date();
+      defaultDate.setDate((defaultDate.getDate() + 8));
+      let flightNumber = 'GD001';
+      let departureTime = defaultDate.valueOf();
+      await config.flightSuretyApp.registerFlight(flightNumber, departureTime, {from: config.firstAirline});
+
+      // passenger (will be any address with some ether)
+      let passenger = accounts[6];
+
+      // ACT
+      let success = false;
+      try {
+        await config.flightSuretyApp.buyInsurance(config.firstAirline, flightNumber, departureTime, {from: passenger, value: web3.utils.toWei('1', 'ether')});
+        success = true;
+      } catch (e) {
+
+      }
+
+      // ASSERT
+      assert.equal(success, true, "Error when buying insurance");
+    });
+
+    it('should prevent a passenger to buy a flight insurance with more than 1 ether', async () => {
+
+      // fund airline
+      await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
+
+      // register flight
+      let defaultDate = new Date();
+      defaultDate.setDate((defaultDate.getDate() + 8));
+      let flightNumber = 'GD001';
+      let departureTime = defaultDate.valueOf();
+      await config.flightSuretyApp.registerFlight(flightNumber, departureTime, {from: config.firstAirline});
+
+      // passenger (will be any address with some ether)
+      let passenger = accounts[6];
+
+      // ACT
+      let success = false;
+      try {
+        await config.flightSuretyApp.buyInsurance(config.firstAirline, flightNumber, departureTime, {from: passenger, value: web3.utils.toWei('1.1', 'ether')});
+        success = true;
+      } catch (e) {
+
+      }
+
+      // ASSERT
+      assert.equal(success, false, "Error when preventing to buy insurance");
+    });
   });
 });

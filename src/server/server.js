@@ -27,14 +27,17 @@ let flights = ["ND001", "ND002", "ND003", "ND004", "ND005"];
       console.log(`Error funding airline ${firstAirline}: `, error);
     });
 
+  let defaultDate = new Date();
+  // current day plus 8 days
+  defaultDate.setDate((defaultDate.getDate() + 8));
+
   // register flights
   let newFlight;
   for (let c = 0; c < flights.length; c++) {
 
     newFlight = {
       flightNumber: flights[c],
-      // TODO: the timestamps might be fixed but take the current date as starting point
-      timestamp: Math.floor(new Date(2021, 12, 25, 22, 30, 0, 0) / 1000),
+      timestamp: defaultDate.valueOf(),
       airline: firstAirline
     }
 
