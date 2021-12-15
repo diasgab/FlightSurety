@@ -294,6 +294,16 @@ contract FlightSuretyData {
         insurances[flightKey].isFullyRefunded = false;
     }
 
+    function getFlightKeys()
+    public
+    view
+    requireIsOperational
+    requireAuthorizedCaller
+    returns (bytes32[] memory)
+    {
+        return flightKeys;
+    }
+
     function getFlight(bytes32 _flightKey)
     public
     view

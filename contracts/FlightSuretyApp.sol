@@ -213,6 +213,15 @@ contract FlightSuretyApp {
         emit FlightRegistered(_flightNumber, msg.sender, _departureTime, flightKey);
     }
 
+    function getFlightKeys()
+    public
+    view
+    requireIsOperational
+    returns (bytes32[] memory)
+    {
+        return flightSuretyData.getFlightKeys();
+    }
+
     /**
     * Buy an insurance
     *
@@ -222,7 +231,7 @@ contract FlightSuretyApp {
     payable
     requireIsOperational
     {
-        require(msg.value <= MAX_INSURANCE_CAP, "Passenger can buy insurance for a maximum of 1 ether");
+        require(msg.value > 0 && msg.value <= MAX_INSURANCE_CAP, "Passenger can buy insurance for a maximum of 1 ether");
         flightSuretyData.buyInsurance(
             _airlineAddress,
             _flightNumber,

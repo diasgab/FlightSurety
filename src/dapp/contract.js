@@ -74,10 +74,15 @@ export default class Contract {
         });
     }
 
+    async getFlightKeys() {
+      let self = this;
+      return await self.flightSuretyApp.methods.getFlightKeys().call({from: this.owner});
+    }
+
     async buyInsurance(request) {
       let self = this;
       console.log(request);
-      let caller = request.from || this.owner;
+      let caller = request.from;
       let paymentAmount = this.web3.utils.toWei(request.amount.toString(), "ether");
 
       let flight  = await self.flightSuretyApp.methods.getFlight(request.flight.toString()).call({from: caller, gas: config.gas});

@@ -15,7 +15,18 @@ import './flightsurety.css';
             console.log(error,result);
             display('Operational Status', 'Check if contract is operational', [ { label: 'Operational Status', error: error, value: result} ]);
         });
-    
+
+        let flightNames = ["ND001", "ND002", "ND003", "ND004", "ND005"];
+        let flightKeys = contract.getFlightKeys();
+          let flightsArray = [];
+          flightKeys.then(result => {
+            result.forEach((element, index) => {
+              flightsArray.push({value: element, text: flightNames[index]});
+              index++
+            });
+
+            populateFlightSelect(DOM.elid('buy-insurance-flight'), flightsArray)
+        });
 
         // User-submitted transaction
         DOM.elid('submit-oracle').addEventListener('click', () => {
@@ -30,36 +41,57 @@ import './flightsurety.css';
           let fromAirline = DOM.elid('from-airline').value;
           let airline = DOM.elid('new-airline').value;
 
-          // Write transaction
-          contract.registerAirline(fromAirline, airline, (error, result) => {
-            if (error) {
-              alert("ERROR: "+ error);
-            } else {
-              console.log(result);
-              alert("Airline added");
+          if (fromAirline == '' || airline == '') {
+            alert("Complete the information: fromAirline and airline");
+            return;
+          }
 
-              DOM.elid('new-airline').value = '';
-              DOM.elid('from-airline').value = '';
-            }
-          });
+          try {
+            // Write transaction
+            contract.registerAirline(fromAirline, airline, (error, result) => {
+              if (error) {
+                alert("ERROR: "+ error);
+              } else {
+                alert(`Airline added`);
+
+                DOM.elid('new-airline').value = '';
+                DOM.elid('from-airline').value = '';
+              }
+            });
+          } catch (error) {
+
+          }
         });
 
       DOM.elid('submit-airline-funds').addEventListener('click', async () => {
         let airlineAddress = DOM.elid('airline-address').value;
         let airlineFunds = DOM.elid('airline-funds').value;
 
-        // Write transaction
-        contract.fundAirline(airlineAddress, airlineFunds, (error, result) => {
-          if (error) {
-            alert("ERROR: "+ error);
-          } else {
-            console.log(result);
-            alert("Airline funded");
+        if (airlineAddress == '' || airlineFunds == '') {
+          alert("Complete the information: address and amount");
+          return;
+        }
 
-            DOM.elid('airline-address').value = '';
-            DOM.elid('airline-funds').value = '';
-          }
-        });
+        if (airlineFunds < 10) {
+          alert("10 ether is the min amount to fund an airline.");
+          return;
+        }
+
+        try {
+          // Write transaction
+          contract.fundAirline(airlineAddress, airlineFunds, (error, result) => {
+            if (error) {
+              alert("ERROR: "+ error);
+            } else {
+              alert("Airline funded");
+
+              DOM.elid('airline-address').value = '';
+              DOM.elid('airline-funds').value = '';
+            }
+          });
+        } catch (error) {
+          alert("ERROR: "+ error);
+        }
       });
 
       DOM.elid("submit-buy-insurance").addEventListener('click', async () => {
@@ -85,13 +117,11 @@ import './flightsurety.css';
 
         try {
           await contract.buyInsurance(request);
-          alert("Bought!");
-          //let insurancesTableRows = DOM.elid("insurances-status-table-rows");
-          //ui.updateInsurancesTable(contract, insurancesTableRows);
-          //ui.showSuccessMessage("Insurance has been bought");
-        } catch (e) {
-          console.log(e);
-          //ui.showErrorMessage(JSON.stringify(e, null, '\t'));
+          alert("Insurance bought");
+          DOM.elid("buy-insurance-passenger").value = '';
+          DOM.elid("buy-insurance-amount").value = '';
+        } catch (error) {
+          alert("ERROR: "+ error);
         }
       });
     
@@ -99,6 +129,17 @@ import './flightsurety.css';
 
 })();
 
+function populateFlightSelect(select, options) {
+
+  options.forEach((element, index) => {
+    var opt = document.createElement("option");
+    opt.value= element.value;
+    opt.innerHTML = element.text; // whatever property it has
+
+    // then append it to the select element
+    select.appendChild(opt);
+  });
+}
 
 function display(title, description, results) {
     let displayDiv = DOM.elid("display-wrapper");
