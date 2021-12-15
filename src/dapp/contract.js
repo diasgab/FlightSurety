@@ -2,10 +2,12 @@ import FlightSuretyApp from '../../build/contracts/FlightSuretyApp.json';
 import Config from './config.json';
 import Web3 from 'web3';
 
+let config;
+
 export default class Contract {
     constructor(network, callback) {
 
-        let config = Config[network];
+        config = Config[network];
         this.web3 = new Web3(new Web3.providers.HttpProvider(config.url));
         this.flightSuretyApp = new this.web3.eth.Contract(FlightSuretyApp.abi, config.appAddress);
         this.initialize(callback);
@@ -52,5 +54,37 @@ export default class Contract {
             .send({ from: self.owner}, (error, result) => {
                 callback(error, payload);
             });
+    }
+
+    registerAirline(fromAirline, airline, callback) {
+      let self = this;
+      self.flightSuretyApp.methods
+        .registerAirline(airline)
+        .send({ from: fromAirline, gas: config.gas}, (error, result) => {
+          callback(error, result);
+        });
+    }
+
+    fundAirline(airline, funds, callback) {
+      let self = this;
+      self.flightSuretyApp.methods
+        .fundAirline()
+        .send({ from: airline, value: this.web3.utils.toWei(funds, "ether"), gas: config.gas}, (error, result) => {
+          callback(error, result);
+        });
+    }
+
+    async buyInsurance(request) {
+      let self = this;
+      console.log(request);
+      let caller = request.from || this.owner;
+      let paymentAmount = this.web3.utils.toWei(request.amount.toString(), "ether");
+
+      let flight  = await self.flightSuretyApp.methods.getFlight(request.flight.toString()).call({from: caller, gas: config.gas});
+      let airline = flight.airline;
+      let flightNumber = flight.flight;
+      let departureTime = flight.departureTime;
+
+      await self.flightSuretyApp.methods.buyInsurance(airline, flightNumber, departureTime).send({from: caller, value: paymentAmount, gas: config.gas});
     }
 }
