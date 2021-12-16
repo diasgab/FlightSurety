@@ -145,10 +145,16 @@ flightSuretyApp.events.OracleRequest({
 
     console.log(`Airline ${airline}, flight ${flight}, timestamp ${timestamp}`)
 
+    let selectedCode;
     for(let a=1; a<oracleAccounts.length; a++) {
 
-      // random number out of [10, 20, 30, 40, 50]
-      const selectedCode = (Math.floor(Math.random() * 5) + 1) * 10;
+      // increment the chances to get the delay status by airline for testing purposes
+      if (a % 2 == 0) {
+        selectedCode = 20;
+      } else {
+        // random number out of [10, 20, 30, 40, 50]
+        selectedCode = (Math.floor(Math.random() * 5) + 1) * 10;
+      }
 
       // Get oracle information
       let oracleIndexes = await flightSuretyApp.methods.getMyIndexes().call({from: oracleAccounts[a]});
@@ -163,10 +169,10 @@ flightSuretyApp.events.OracleRequest({
           }).then(result => {
             console.log(`Oracle: ${oracleIndexes[idx]} responded from flight ${flight} with status ${selectedCode} ${states[selectedCode]}`);
           }).catch(err => {
-            //console.log(err.message);
+            console.log(err.message);
           });
         } catch(e) {
-          //console.log("Error: " + e);
+          console.log("Error: " + e);
         }
       }
     }

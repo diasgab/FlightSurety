@@ -7,7 +7,7 @@ module.exports = async function(deployer, network, accounts) {
     let firstAirline = accounts[1];
     await deployer.deploy(FlightSuretyData)
     .then(() => {
-        return deployer.deploy(FlightSuretyApp, FlightSuretyData.address, firstAirline)
+        return deployer.deploy(FlightSuretyApp, FlightSuretyData.address, firstAirline, "First airline")
                 .then(() => {
                     let config = {
                         localhost: {

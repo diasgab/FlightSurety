@@ -14,6 +14,7 @@ contract FlightSuretyData {
     mapping(address => bool) private authorizedCallers; // this refers to the smart contract app who is able to use this contract
 
     struct Airline {
+        string name;
         bool isRegistered;
         bool isFunded;
     }
@@ -219,9 +220,10 @@ contract FlightSuretyData {
     /**
     *
     */
-    function registerFirstAirline(address _airlineAddress) external requireIsOperational {
+    function registerFirstAirline(address _airlineAddress, string _name) external requireIsOperational {
         require(countAirlines == 0, "Not the first airline");
         airlines[_airlineAddress] = Airline({
+            name: _name,
             isRegistered: true,
             isFunded: false
         });
@@ -255,13 +257,15 @@ contract FlightSuretyData {
     */
     function registerAirline
     (
-        address _airlineAddress
+        address _airlineAddress,
+        string _name
     )
     external
     requireIsOperational
     requireAuthorizedCaller
     {
         airlines[_airlineAddress] = Airline({
+            name: _name,
             isRegistered: true,
             isFunded: false
         });
@@ -348,6 +352,7 @@ contract FlightSuretyData {
     {
         require(flights[_flightKey].isRegistered, "Flight does not exist");
         require(insurances[_flightKey].isFullyRefunded == false, "Already refunded");
+        insurances[_flightKey].isFullyRefunded = true;
 
         address passenger;
         uint256 amountToRefund;
@@ -357,14 +362,13 @@ contract FlightSuretyData {
             // pay to the passenger 1.5x the amount they paid for the insurance
             amountToRefund = insurances[_flightKey].purchasedAmount[passenger];
             amountToRefund = amountToRefund.mul(3).div(2);
-
-            require(amountToRefund <= totalFunds, "Not enough funds to credit insurees");
-            insurances[_flightKey].refundedAmount[passenger] = amountToRefund;
-            insurances[_flightKey].purchasedAmount[passenger] = 0;
-            totalFunds -= amountToRefund;
+            if (amountToRefund > 0) {
+                require(amountToRefund <= totalFunds, "Not enough funds to credit insurees");
+                insurances[_flightKey].refundedAmount[passenger] = amountToRefund;
+                insurances[_flightKey].purchasedAmount[passenger] = 0;
+                totalFunds -= amountToRefund;
+            }
         }
-
-        insurances[_flightKey].isFullyRefunded = true;
     }
 
     /**

@@ -50,22 +50,24 @@ import './flightsurety.css';
 
     DOM.elid('submit-airline').addEventListener('click', () => {
       let fromAirline = DOM.elid('from-airline').value;
-      let airline = DOM.elid('new-airline').value;
+      let airlineAddress = DOM.elid('new-airline-address').value;
+      let airlineName = DOM.elid('new-airline-name').value;
 
-      if (fromAirline == '' || airline == '') {
+      if (fromAirline == '' || airlineAddress == ''|| airlineName == '') {
         alert("Complete the information: fromAirline and airline");
         return;
       }
 
       try {
         // Write transaction
-        contract.registerAirline(fromAirline, airline, (error, result) => {
+        contract.registerAirline(fromAirline, airlineAddress, airlineName, (error, result) => {
           if (error) {
             alert("ERROR: " + error);
           } else {
             alert(`Airline added`);
 
-            DOM.elid('new-airline').value = '';
+            DOM.elid('new-airline-address').value = '';
+            DOM.elid('new-airline-name').value = '';
             DOM.elid('from-airline').value = '';
           }
         });

@@ -107,13 +107,14 @@ contract FlightSuretyApp {
     constructor
                                 (
                                     address _dataContract,
-                                    address _airline
+                                    address _airline,
+                                    string _airlineName
                                 ) 
                                 public 
     {
         contractOwner = msg.sender;
         flightSuretyData = FlightSuretyData(_dataContract);
-        flightSuretyData.registerFirstAirline(_airline);
+        flightSuretyData.registerFirstAirline(_airline, _airlineName);
     }
 
     /********************************************************************************************/
@@ -156,7 +157,8 @@ contract FlightSuretyApp {
     */
     function registerAirline
     (
-        address _airlineAddress
+        address _airlineAddress,
+        string _name
     )
     external
     requireIsOperational
@@ -170,7 +172,7 @@ contract FlightSuretyApp {
 
         uint256 airlinesCount = flightSuretyData.getAirlinesCount();
         if (airlinesCount < THRESHOLD_AIRLINES ) {
-            flightSuretyData.registerAirline(_airlineAddress);
+            flightSuretyData.registerAirline(_airlineAddress, _name);
             registered = true;
             emit RegisteredAirline(_airlineAddress, flightSuretyData.getAirlinesCount());
 
@@ -186,7 +188,7 @@ contract FlightSuretyApp {
 
             numberOfVotes = flightSuretyData.airlineVotesCount(_airlineAddress);
             if (numberOfVotes == requiredVotes) {
-                flightSuretyData.registerAirline(_airlineAddress);
+                flightSuretyData.registerAirline(_airlineAddress, _name);
                 registered = true;
                 emit RegisteredAirline(_airlineAddress, flightSuretyData.getAirlinesCount());
             } else {

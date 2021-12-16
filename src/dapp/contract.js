@@ -56,10 +56,10 @@ export default class Contract {
             });
     }
 
-    registerAirline(fromAirline, airline, callback) {
+    registerAirline(fromAirline, airline, name, callback) {
       let self = this;
       self.flightSuretyApp.methods
-        .registerAirline(airline)
+        .registerAirline(airline, name)
         .send({ from: fromAirline, gas: config.gas}, (error, result) => {
           callback(error, result);
         });

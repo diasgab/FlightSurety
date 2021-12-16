@@ -134,7 +134,7 @@ contract('Oracles', async (accounts) => {
 
     // check the passenger credit
     let credit = await config.flightSuretyApp.getPassengerCredit(passenger, config.firstAirline, flight, timestamp);
-    assert.equal(credit, web3.utils.toWei('1.5', 'ether'), "The credit amount is not as expected");
+    assert.equal(credit, web3.utils.toWei('1.5', 'ether'), "The credit amount is not as expected. Please run the tests again.");
 
   });
 
@@ -149,7 +149,7 @@ contract('Oracles', async (accounts) => {
     await config.flightSuretyApp.withdrawPassengerCredit(config.firstAirline, flight, timestamp, {from: passenger});
 
     let result = await web3.eth.getBalance(config.flightSuretyData.address);
-    assert.equal(result, web3.utils.toWei('9.5', 'ether'), "The total funds should be 9.5 ether");
+    assert.equal(result, web3.utils.toWei('9.5', 'ether'), "The total funds should be 9.5 ether. Please run the tests again.");
 
   });
 

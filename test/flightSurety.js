@@ -105,7 +105,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
     it('should keep consistency between the contract balance and the added funds', async () => {
       await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
-      await config.flightSuretyApp.registerAirline(accounts[3], {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[3], '', {from: config.firstAirline});
       await config.flightSuretyApp.fundAirline({from: accounts[3], value: web3.utils.toWei('10', 'ether')});
 
       let result = await web3.eth.getBalance(config.flightSuretyData.address);
@@ -124,7 +124,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
       // ACT
       try {
-        await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
+        await config.flightSuretyApp.registerAirline(newAirline, '', {from: config.firstAirline});
       } catch (e) {
 
       }
@@ -138,13 +138,13 @@ contract('Flight Surety Tests', async (accounts) => {
     it('should allow the first funded airline to add up to 3 more airlines without requiring consensus', async () => {
       await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
 
-      await config.flightSuretyApp.registerAirline(accounts[3], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[4], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[5], {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[3],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[4],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[5],'', {from: config.firstAirline});
 
       // this last one should not be added
       let newAirline = accounts[6];
-      await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(newAirline,'', {from: config.firstAirline});
 
       let result = await config.flightSuretyData.getAirlinesCount.call();
 
@@ -154,13 +154,13 @@ contract('Flight Surety Tests', async (accounts) => {
 
     it('should allow a funded airline to vote for a new airline to be included', async () => {
       await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
-      await config.flightSuretyApp.registerAirline(accounts[3], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[4], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[5], {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[3],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[4],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[5],'', {from: config.firstAirline});
 
       // this last one should not be added but should count as a voted one
       let newAirline = accounts[6];
-      await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(newAirline,'', {from: config.firstAirline});
 
       let result = await config.flightSuretyData.airlineVotesCount.call(newAirline);
 
@@ -169,9 +169,9 @@ contract('Flight Surety Tests', async (accounts) => {
 
     it("should prevent adding a new airline if it doesn't reach to the minimum consensus", async () => {
       await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
-      await config.flightSuretyApp.registerAirline(accounts[3], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[4], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[5], {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[3],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[4],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[5],'', {from: config.firstAirline});
 
       await config.flightSuretyApp.fundAirline({from: accounts[3], value: web3.utils.toWei('10', 'ether')});
       await config.flightSuretyApp.fundAirline({from: accounts[4], value: web3.utils.toWei('10', 'ether')});
@@ -179,7 +179,7 @@ contract('Flight Surety Tests', async (accounts) => {
 
       // having 1 vote shouldn't be enough
       let newAirline = accounts[6];
-      await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(newAirline,'', {from: config.firstAirline});
 
       let votesCount = await config.flightSuretyData.airlineVotesCount.call(newAirline);
       let result = await config.flightSuretyData.getAirlinesCount.call();
@@ -190,9 +190,9 @@ contract('Flight Surety Tests', async (accounts) => {
 
     it('should allow an airline to be included after reaching the consensus', async () => {
       await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
-      await config.flightSuretyApp.registerAirline(accounts[3], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[4], {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(accounts[5], {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[3],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[4],'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(accounts[5],'', {from: config.firstAirline});
 
       await config.flightSuretyApp.fundAirline({from: accounts[3], value: web3.utils.toWei('10', 'ether')});
       await config.flightSuretyApp.fundAirline({from: accounts[4], value: web3.utils.toWei('10', 'ether')});
@@ -200,8 +200,8 @@ contract('Flight Surety Tests', async (accounts) => {
 
       // having 2 votes should be enough because we only need half of the airlines to agree
       let newAirline = accounts[6];
-      await config.flightSuretyApp.registerAirline(newAirline, {from: config.firstAirline});
-      await config.flightSuretyApp.registerAirline(newAirline, {from: accounts[3]});
+      await config.flightSuretyApp.registerAirline(newAirline,'', {from: config.firstAirline});
+      await config.flightSuretyApp.registerAirline(newAirline,'', {from: accounts[3]});
 
       let result = await config.flightSuretyData.getAirlinesCount.call();
 
