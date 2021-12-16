@@ -1,4 +1,3 @@
-
 # Prerequisites
 * Truffle v5.3.7 (core: 5.3.7)
 * Solidity - ^0.4.25 (solc-js)
@@ -13,13 +12,20 @@
 * create a workspace in ganache-ui with 30 accounts (and 1000 ETH balance) in port 7545
 * Make sure to use the right truffle version. You can run `npx truffle version` from the project root dir
 
-# Compile the contracts
-truffle migrate --reset
-npm run dapp
-npm run server
+# Workflow
+1. Run the migrations with `truffle migrate --reset`
+2. Run the server with `npm run server`. This will fund the first airline, create 5 flights and register 20 oracles
+3. Run the dapp with `npm run dapp`. Then access the application on http://localhost:8000
+4. You can buy an insurance by providing 1 ETH for a given flight.
+5. Then when submitting the flight status request you can see in teh console the events. No always a refund will be available, only when the flight is delayed by the airline.
+6. From the UI the passenger can check the credit amount.
+7. If the credit amount is greater than 0, then a withdrawal can be issued.
 
 # Running tests
-truffle test ./test/flightSurety.js
+* `truffle test ./test/flightSurety.js`
+* `truffle test ./test/oracles.js`
+
+
 
 
 
