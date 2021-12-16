@@ -312,5 +312,24 @@ contract('Flight Surety Tests', async (accounts) => {
       // ASSERT
       assert.equal(success, false, "Error when preventing to buy insurance");
     });
+
+    it('should keep consistency between the contract balance and the added funds', async () => {
+      await config.flightSuretyApp.fundAirline({from: config.firstAirline, value: web3.utils.toWei('10', 'ether')});
+
+      // buy insurance
+      let defaultDate = new Date();
+      defaultDate.setDate((defaultDate.getDate() + 8));
+      let flightNumber = 'GD001';
+      let departureTime = defaultDate.valueOf();
+      await config.flightSuretyApp.registerFlight(flightNumber, departureTime, {from: config.firstAirline});
+
+      // passenger (will be any address with some ether)
+      let passenger = accounts[6];
+      await config.flightSuretyApp.buyInsurance(config.firstAirline, flightNumber, departureTime, {from: passenger, value: web3.utils.toWei('1', 'ether')});
+
+      let result = await web3.eth.getBalance(config.flightSuretyData.address);
+
+      assert.equal(result, web3.utils.toWei('11', 'ether'), "The total funds should be 11 ether");
+    });
   });
 });

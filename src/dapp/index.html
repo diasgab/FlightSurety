@@ -32,8 +32,14 @@
         <div class="row top-20 row-content">
           <label class="form">Buy Insurance</label> Flight&nbsp;&nbsp;<select id="buy-insurance-flight"></select>&nbsp;&nbsp;Passenger&nbsp;&nbsp;<input type="text" id="buy-insurance-passenger"> amount (ETH)&nbsp;&nbsp;<input type="text" id="buy-insurance-amount"> <btn class="btn btn-primary" id="submit-buy-insurance">Buy</btn>
         </div>
+        <div class="row top-20 row-content">
+          <label class="form">Fetch refunded amount</label> Passenger&nbsp;&nbsp;<input type="text" id="refund-passenger-address">&nbsp;&nbsp;Flight&nbsp;&nbsp;<select id="refund-flight-address"></select>&nbsp;&nbsp;<btn class="btn btn-primary" id="submit-check-refund">Check refund</btn>
+        </div>
+        <div class="row top-20 row-content">
+          <label class="form">Withdraw refunded amount </label> Passenger&nbsp;&nbsp;<input type="text" id="withdraw-passenger-address">&nbsp;&nbsp;Flight&nbsp;&nbsp;<select id="withdraw-flight-address"></select>&nbsp;&nbsp;<btn class="btn btn-primary" id="submit-withdraw-refund">Withdraw</btn>
+        </div>
         <div class="row top-20">
-            <label class="form">Flight</label> <input type="text" id="flight-number"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
+            <label class="form">Flight</label> <select id="oracle-flight-number"></select>&nbsp;&nbsp;Departure Time&nbsp;&nbsp;<input type="text" id="flight-departure"> <btn class="btn btn-primary" id="submit-oracle">Submit to Oracles</btn>
         </div>
     </main>
 

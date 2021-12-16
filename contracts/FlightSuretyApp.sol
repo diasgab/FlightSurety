@@ -50,6 +50,7 @@ contract FlightSuretyApp {
     event AirlineFunded(address airlineAddress, uint256 funds);
     event FlightRegistered(string flightNumber, address airlineAddress, uint256 departureTime, bytes32 flightKey);
     event FlightInsurancePurchased(address passengerAddress, uint256 amount);
+    event FlightInsuranceWithdraw(address passengerAddress, uint256 amount);
 
     /********************************************************************************************/
     /*                                       FUNCTION MODIFIERS                                 */
@@ -258,6 +259,35 @@ contract FlightSuretyApp {
     {
         return flightSuretyData.getFlight(_flightKey);
     }
+
+    /**
+    * @dev Move funds from the insurance to the user balance (in the contract)
+    *
+    */
+    function getPassengerCredit(address _passenger, address _airline, string _flight, uint256 _departureTime)
+    public
+    view
+    requireIsOperational
+    returns (uint256)
+    {
+        bytes32 flightKey = getFlightKey(_airline, _flight, _departureTime);
+
+        return flightSuretyData.getPassengerCredit(_passenger, flightKey);
+    }
+
+    /**
+    * @dev Move the user balance to their account (out of the contract)
+    *
+    */
+    function withdrawPassengerCredit(address _airline, string _flight, uint256 _departureTime)
+    public
+    requireIsOperational
+    {
+        bytes32 flightKey = getFlightKey(_airline, _flight, _departureTime);
+        uint256 amount = flightSuretyData.pay(flightKey, msg.sender);
+
+        emit FlightInsuranceWithdraw(msg.sender, amount);
+    }
     
    /**
     * @dev Called after oracle has updated flight status
@@ -270,13 +300,14 @@ contract FlightSuretyApp {
                                     uint256 timestamp,
                                     uint8 statusCode
                                 )
-                                internal
-                                pure
+                                public
+                                requireIsOperational
     {
-        // TODO: probably only react to status code == 20 ,determine if someone has to be paid and how much
-        // NOTE: this method will be triggered by the dapp when requesting the flight status (it's manual)
+        bytes32 flightKey = getFlightKey(airline, flight, timestamp);
+        if (statusCode == STATUS_CODE_LATE_AIRLINE) {
+            flightSuretyData.creditInsurees(flightKey);
+        }
     }
-
 
     // Generate a request for oracles to fetch flight information
     function fetchFlightStatus

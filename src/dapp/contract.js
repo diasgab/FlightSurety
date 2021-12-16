@@ -42,12 +42,12 @@ export default class Contract {
             .call({ from: self.owner}, callback);
     }
 
-    fetchFlightStatus(flight, callback) {
+    fetchFlightStatus(flight, departure, callback) {
         let self = this;
         let payload = {
             airline: self.airlines[0],
             flight: flight,
-            timestamp: Math.floor(Date.now() / 1000)
+            timestamp: departure
         } 
         self.flightSuretyApp.methods
             .fetchFlightStatus(payload.airline, payload.flight, payload.timestamp)
@@ -91,5 +91,29 @@ export default class Contract {
       let departureTime = flight.departureTime;
 
       await self.flightSuretyApp.methods.buyInsurance(airline, flightNumber, departureTime).send({from: caller, value: paymentAmount, gas: config.gas});
+    }
+
+    async getPassengerCredit(request) {
+      let self = this;
+
+      let caller = request.from;
+      let flight  = await self.flightSuretyApp.methods.getFlight(request.flight.toString()).call({from: caller, gas: config.gas});
+      let airline = flight.airline;
+      let flightNumber = flight.flight;
+      let departureTime = flight.departureTime;
+
+      return await self.flightSuretyApp.methods.getPassengerCredit(request.from, airline, flightNumber, departureTime).call({from: caller, gas: config.gas});
+    }
+
+    async payPassengerCredit(request) {
+      let self = this;
+
+      let caller = request.from;
+      let flight  = await self.flightSuretyApp.methods.getFlight(request.flight.toString()).call({from: caller, gas: config.gas});
+      let airline = flight.airline;
+      let flightNumber = flight.flight;
+      let departureTime = flight.departureTime;
+
+      return await self.flightSuretyApp.methods.withdrawPassengerCredit(airline, flightNumber, departureTime).call({from: caller, gas: config.gas});
     }
 }

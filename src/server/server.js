@@ -17,15 +17,19 @@ let flights = ["ND001", "ND002", "ND003", "ND004", "ND005"];
   let accounts = await web3.eth.getAccounts();
   oracleAccounts = accounts.splice(10,29);
 
-  // fund the first airline, so we are able to add flights
-  await flightSuretyApp.methods.fundAirline()
-    .send({from: firstAirline, value: web3.utils.toWei('10', "ether")})
-    .then(result => {
-      console.log(`Airline ${firstAirline} funded`);
-    })
-    .catch(error => {
-      console.log(`Error funding airline ${firstAirline}: `, error);
-    });
+  try {
+    // fund the first airline, so we are able to add flights
+    await flightSuretyApp.methods.fundAirline()
+      .send({from: firstAirline, value: web3.utils.toWei('10', "ether")})
+      .then(result => {
+        console.log(`Airline ${firstAirline} funded`);
+      })
+      .catch(error => {
+        console.log(`Error funding airline ${firstAirline}: `, error);
+      });
+  } catch (e) {
+    console.log("Error: ", e);
+  }
 
   let defaultDate = new Date();
   // current day plus 8 days
@@ -37,22 +41,26 @@ let flights = ["ND001", "ND002", "ND003", "ND004", "ND005"];
 
     newFlight = {
       flightNumber: flights[c],
-      timestamp: defaultDate.valueOf(),
+      timestamp: Math.floor(defaultDate / 1000),
       airline: firstAirline
     }
 
-    await flightSuretyApp.methods.registerFlight(newFlight.flightNumber, newFlight.timestamp).send(
-      {
-        from: newFlight.airline,
-        gas: 4712388,
-        gasPrice: 100000000000
-      }
-    ).then(result => {
-      console.log(`Flight ${newFlight.flightNumber} registered`);
-    })
-    .catch(error => {
-      console.log(`Error registering flight ${newFlight.flightNumber}`, error);
-    });
+    try {
+      await flightSuretyApp.methods.registerFlight(newFlight.flightNumber, newFlight.timestamp).send(
+        {
+          from: newFlight.airline,
+          gas: 4712388,
+          gasPrice: 100000000000
+        }
+      ).then(result => {
+        console.log(`Flight ${newFlight.flightNumber} registered with timestamp ${newFlight.timestamp}`);
+      })
+        .catch(error => {
+          console.log(`Error registering flight ${newFlight.flightNumber}`, error);
+        });
+    } catch (e) {
+      console.log("Error: ", e);
+    }
   }
 
   // fee for registering oracle
@@ -81,13 +89,87 @@ let flights = ["ND001", "ND002", "ND003", "ND004", "ND005"];
   }
 })();
 
-console.log("Registering Oracles and Flights...");
+console.log("Registering Oracles...");
+
+// Watch contract events
+let states = {
+    0: 'unknown',
+    10: 'on time',
+    20: 'late due to airline',
+    30: 'late due to weather',
+    40: 'late due to technical reason',
+    50: 'late due to other reason'
+};
+
+flightSuretyApp.events.OracleReport({
+  fromBlock: "latest"
+}, async function (error, event) {
+  if (error) {
+    console.log(error)
+  }
+
+  let airline = event.returnValues.airline;
+  let flight = event.returnValues.flight;
+  let timestamp = event.returnValues.timestamp;
+  let status = event.returnValues.status;
+
+  //console.log(`OracleReport: airline ${airline}, flight ${flight}, date ${timestamp}, status ${states[status]}`)
+});
+
+flightSuretyApp.events.FlightStatusInfo({
+  fromBlock: "latest"
+}, async function (error, event) {
+  if (error) {
+    console.log(error)
+  }
+
+  let airline = event.returnValues.airline;
+  let flight = event.returnValues.flight;
+  let timestamp = event.returnValues.timestamp;
+  let status = event.returnValues.status;
+
+  //console.log(`FlightStatusInfo: airline ${airline}, flight ${flight}, date ${timestamp}, status ${states[status]}`)
+});
 
 flightSuretyApp.events.OracleRequest({
-    fromBlock: 0
-  }, function (error, event) {
-    if (error) console.log(error)
-    console.log(event)
+    fromBlock: "latest"
+  }, async function (error, event) {
+    if (error) {
+      console.log(error)
+      return;
+    }
+
+    let airline = event.returnValues.airline;
+    let flight = event.returnValues.flight;
+    let timestamp = event.returnValues.timestamp;
+
+    console.log(`Airline ${airline}, flight ${flight}, timestamp ${timestamp}`)
+
+    for(let a=1; a<oracleAccounts.length; a++) {
+
+      // random number out of [10, 20, 30, 40, 50]
+      const selectedCode = (Math.floor(Math.random() * 5) + 1) * 10;
+
+      // Get oracle information
+      let oracleIndexes = await flightSuretyApp.methods.getMyIndexes().call({from: oracleAccounts[a]});
+      for(let idx=0;idx<3;idx++) {
+
+        try {
+          flightSuretyApp.methods.submitOracleResponse(
+            oracleIndexes[idx], airline, flight, timestamp, selectedCode
+          ).send({
+            from: oracleAccounts[a],
+            gas: config.gas
+          }).then(result => {
+            console.log(`Oracle: ${oracleIndexes[idx]} responded from flight ${flight} with status ${selectedCode} ${states[selectedCode]}`);
+          }).catch(err => {
+            //console.log(err.message);
+          });
+        } catch(e) {
+          //console.log("Error: " + e);
+        }
+      }
+    }
 });
 
 const app = express();
